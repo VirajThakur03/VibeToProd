@@ -1,0 +1,9 @@
+# Backend Git Ignore
+__pycache__/
+*.pyc
+venv/
+.venv/
+*.db
+*.sqlite
+.env
+*.log

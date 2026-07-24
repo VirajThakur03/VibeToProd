@@ -1,0 +1,9 @@
+# Frontend Git Ignore
+node_modules
+dist
+dist-isolation
+.vite
+.env
+.env.local
+.DS_Store
+*.log

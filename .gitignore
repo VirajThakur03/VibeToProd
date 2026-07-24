@@ -1,0 +1,71 @@
+# ==========================================
+# AI_SLICE - Production Git Ignore Manifest
+# ==========================================
+
+# 1. Dependencies & Packages
+node_modules/
+frontend/node_modules/
+.pnp
+.pnp.js
+
+# 2. Build & Production Outputs
+dist/
+frontend/dist/
+build/
+frontend/build/
+.vite/
+frontend/.vite/
+.out/
+
+# 3. Python Compiled Files & Virtual Environments
+__pycache__/
+*/__pycache__/
+*/*/__pycache__/
+*.py[cod]
+*$py.class
+venv/
+.venv/
+env/
+ENV/
+.pytest_cache/
+
+# 4. Local Database & State Storage
+*.db
+*.sqlite
+*.sqlite3
+backend/*.db
+prompt_wrapper.db
+*.db-journal
+
+# 5. Environment Variables & Secrets (CRITICAL SECURITY)
+.env
+.env.*
+!.env.example
+backend/.env
+frontend/.env
+
+# 6. Logs & Debug Transcripts
+logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# 7. OS & System Files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+desktop.ini
+
+# 8. Editor Temp Workspace Files
+.idea/
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.swp
