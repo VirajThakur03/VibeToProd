@@ -693,6 +693,13 @@ export const PRODUCTION_COMMANDS = [
     description: 'WCAG 2.1 AAA Accessibility audit scanning ARIA attributes, contrast ratios, and keyboard navigation',
     maxTokens: 400,
     systemPrompt: `Perform a WCAG 2.1 AAA Accessibility (a11y) audit on the provided markup/component. Output: 1) Missing ARIA attributes & semantic tag fixes, 2) Keyboard focus management issues, 3) Screen reader compatibility, 4) Remediated accessible JSX/HTML code block.`
+  },
+  {
+    name: '/github',
+    category: 'Security & Audits',
+    description: 'GitHub Repository Security Audit, .gitignore generator, .env secret protection & emergency cleanup guide',
+    maxTokens: 450,
+    systemPrompt: `You are a Principal DevSecOps Engineer. Perform a GitHub Repository Security Audit: 1) Secrets leak audit (.env, API keys, passwords), 2) Complete production .gitignore manifest, 3) Safe .env.example template, 4) Safe git commit & push commands, 5) Emergency secret revocation & Git history purge protocol. Zero fluff.`
   }
 ];
 

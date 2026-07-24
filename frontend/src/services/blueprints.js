@@ -108,6 +108,22 @@ You are an expert Web Architect and Product Strategist. Your goal is to take a s
 6. Strategic Differentiation & Unique Features (+ MCQ A-D)
 7. Future Scale & Long-Term Goals (+ Master Blueprint Export)`;
 
+export const GITHUB_MD_CONTENT = `# GitHub Security & Privacy Protection Blueprint (/github)
+
+**Role:** Principal DevSecOps Engineer & GitHub Security Specialist (30+ Years Experience)  
+**Goal:** Provide comprehensive GitHub repository security auditing, .gitignore generation, environment secret protection (.env), emergency secret revocation protocols, and safe deployment steps.
+
+---
+
+## The 7-Step GitHub Security Audit Framework
+- **Step 1: Sensitive File Inventory & Leak Audit** (Scan for unignored .env files, API keys, passwords, database URLs)
+- **Step 2: Production .gitignore Manifest Generation** (Node.js, Python, Databases, OS temp files)
+- **Step 3: .env.example Template Creation** (Public placeholder template without real secrets)
+- **Step 4: Staged File Tracking Inspection** (git status & git check-ignore verification)
+- **Step 5: Safe Git Commit & Push Workflow** (git init, git add, git commit, git push steps)
+- **Step 6: Emergency Leaked Secret Revocation Protocol** (Key rotation & git-filter-repo purge)
+- **Step 7: Automated Deployment Setup** (GitHub Pages / Actions deployment workflow)`;
+
 const CUSTOM_BLUEPRINTS_KEY = 'ai_slice_custom_blueprints_v6';
 
 const SYSTEM_BLUEPRINTS_MAP = {};
@@ -119,6 +135,7 @@ PRODUCTION_COMMANDS.forEach(cmd => {
   if (cmd.name === '/api') promptContent = API_MD_CONTENT;
   if (cmd.name === '/error') promptContent = ERROR_MD_CONTENT;
   if (cmd.name === '/plan') promptContent = PLAN_MD_CONTENT;
+  if (cmd.name === '/github') promptContent = GITHUB_MD_CONTENT;
 
   SYSTEM_BLUEPRINTS_MAP[cmd.name.toLowerCase()] = {
     name: cmd.name,
