@@ -1,6 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { Send, Loader2, Terminal, CornerDownLeft, Info, Zap, Search } from 'lucide-react';
+import { Send, Loader2, Terminal, CornerDownLeft, Info, Zap, Search, Mic, MicOff, Wand2, Globe } from 'lucide-react';
 import CommandDropdown from './CommandDropdown';
+import { translateToEnglishPrompt, enhanceToExpertPrompt } from '../services/translatorService';
 
 export default function CommandInput({ availableCommands, onSubmit, isLoading }) {
   const [text, setText] = useState('');
@@ -8,8 +9,15 @@ export default function CommandInput({ availableCommands, onSubmit, isLoading })
   const [selectedIndex, setSelectedIndex] = useState(0);
   const [hoveredBlueprint, setHoveredBlueprint] = useState(null);
   const [filteredCommands, setFilteredCommands] = useState(availableCommands || []);
-  
+
+  // Voice & Translation States
+  const [isListening, setIsListening] = useState(false);
+  const [nativeTranscript, setNativeTranscript] = useState('');
+  const [detectedLanguage, setDetectedLanguage] = useState('');
+  const [isEnhanced, setIsEnhanced] = useState(false);
+
   const inputRef = useRef(null);
+  const recognitionRef = useRef(null);
 
   // Global Ctrl+K / Cmd+K focus shortcut listener
   useEffect(() => {
@@ -25,7 +33,73 @@ export default function CommandInput({ availableCommands, onSubmit, isLoading })
     return () => window.removeEventListener('keydown', handleGlobalFocus);
   }, []);
 
-  // Intelligent Slash Command Auto-Suggester (Supports '/' commands AND Natural Language queries)
+  // Initialize Speech Recognition API
+  useEffect(() => {
+    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+    if (SpeechRecognition) {
+      const rec = new SpeechRecognition();
+      rec.continuous = true;
+      rec.interimResults = true;
+      rec.lang = 'hi-IN'; // Multi-accent default, auto-detects Marathi, Hindi, English
+
+      rec.onresult = (event) => {
+        let transcriptStr = '';
+        for (let i = event.resultIndex; i < event.results.length; ++i) {
+          transcriptStr += event.results[i][0].transcript;
+        }
+
+        if (transcriptStr.trim()) {
+          setNativeTranscript(transcriptStr);
+          const translation = translateToEnglishPrompt(transcriptStr);
+          setDetectedLanguage(translation.detectedLang);
+          setText(translation.translatedText || transcriptStr);
+        }
+      };
+
+      rec.onerror = (e) => {
+        console.error("Speech Recognition Error:", e);
+        setIsListening(false);
+      };
+
+      rec.onend = () => {
+        setIsListening(false);
+      };
+
+      recognitionRef.current = rec;
+    }
+  }, []);
+
+  const toggleListening = () => {
+    if (!recognitionRef.current) {
+      alert("Speech recognition is not supported in this browser. Please use Chrome, Edge, or Safari.");
+      return;
+    }
+
+    if (isListening) {
+      recognitionRef.current.stop();
+      setIsListening(false);
+    } else {
+      setNativeTranscript('');
+      setDetectedLanguage('');
+      setIsEnhanced(false);
+      try {
+        recognitionRef.current.start();
+        setIsListening(true);
+      } catch (err) {
+        console.error("Failed to start speech recognition", err);
+      }
+    }
+  };
+
+  // 30+ YOE Expert Prompt Enhancer
+  const handleEnhancePrompt = () => {
+    if (!text.trim()) return;
+    const enhanced = enhanceToExpertPrompt(text);
+    setText(enhanced);
+    setIsEnhanced(true);
+  };
+
+  // Intelligent Slash Command Auto-Suggester
   useEffect(() => {
     const trimmed = text.trim();
     if (!trimmed) {
@@ -42,7 +116,6 @@ export default function CommandInput({ availableCommands, onSubmit, isLoading })
       setShowDropdown(matches.length > 0 && !trimmed.includes(' '));
       setSelectedIndex(0);
     } else {
-      // Natural language matching (e.g., "i need command for future plan" or "fix error")
       const queryWords = trimmed.toLowerCase().split(/\s+/).filter(w => w.length > 2 && !['need', 'for', 'the', 'how', 'want', 'with'].includes(w));
       
       const matches = availableCommands.filter(c => {
@@ -106,6 +179,9 @@ export default function CommandInput({ availableCommands, onSubmit, isLoading })
     if (!text.trim() || isLoading) return;
     onSubmit(text);
     setText('');
+    setNativeTranscript('');
+    setDetectedLanguage('');
+    setIsEnhanced(false);
     setShowDropdown(false);
   };
 
@@ -145,6 +221,18 @@ export default function CommandInput({ availableCommands, onSubmit, isLoading })
           </div>
         )}
 
+        {/* DUAL-LAYER DISPLAY: Native Spoken Transcript (Marathi/Hindi/Spanish/etc.) */}
+        {nativeTranscript && (
+          <div className="mb-2 px-3 py-1.5 rounded-lg bg-purple-500/10 border border-purple-500/30 text-xs font-mono text-purple-300 flex items-center justify-between">
+            <div className="flex items-center space-x-2 truncate">
+              <Globe className="w-3.5 h-3.5 text-purple-400 shrink-0" />
+              <span className="font-bold text-purple-400">{detectedLanguage || 'Multilingual Voice'}:</span>
+              <span className="text-white italic truncate">"{nativeTranscript}"</span>
+            </div>
+            <span className="text-[10px] text-purple-400 shrink-0 ml-2">Auto-Translated ↓</span>
+          </div>
+        )}
+
         <div className="flex items-center space-x-2.5 px-2">
           
           <div className="w-6 h-6 rounded bg-dev-bg border border-dev-border flex items-center justify-center text-blue-400 font-mono font-bold text-xs">
@@ -162,11 +250,43 @@ export default function CommandInput({ availableCommands, onSubmit, isLoading })
                 setShowDropdown(true);
               }
             }}
-            placeholder="Type / or ask anything ('i need command for future plan', 'fix error', 'create db schema')..."
+            placeholder="Type / or speak in any language (Marathi, Hindi, English, Spanish)..."
             className="w-full bg-transparent text-xs sm:text-sm text-white placeholder-dev-muted focus:outline-none py-2 font-mono"
             disabled={isLoading}
           />
 
+          {/* Voice Input Microphone Toggle */}
+          <button
+            type="button"
+            onClick={toggleListening}
+            className={`p-1.5 rounded-lg border transition-all ${
+              isListening
+                ? 'bg-rose-600 text-white border-rose-500 animate-pulse shadow-dev-subtle'
+                : 'bg-dev-bg hover:bg-dev-hover text-dev-muted hover:text-white border-dev-border'
+            }`}
+            title={isListening ? "Listening... Click to stop" : "Speak in Marathi, Hindi, English, Spanish, etc."}
+          >
+            {isListening ? <MicOff className="w-4 h-4 text-white" /> : <Mic className="w-4 h-4 text-emerald-400" />}
+          </button>
+
+          {/* 30+ YOE Expert Prompt Enhancer Button */}
+          {text.trim() && (
+            <button
+              type="button"
+              onClick={handleEnhancePrompt}
+              className={`px-2.5 py-1.5 rounded text-xs font-mono font-medium flex items-center space-x-1 transition-all ${
+                isEnhanced
+                  ? 'bg-purple-600/20 text-purple-300 border border-purple-500/40'
+                  : 'bg-purple-600/10 hover:bg-purple-600/20 text-purple-300 border border-purple-500/30'
+              }`}
+              title="Enhance raw prompt into 30+ YOE Senior Principal Architect specification"
+            >
+              <Wand2 className="w-3.5 h-3.5 text-purple-400" />
+              <span className="hidden md:inline">🪄 30+ YOE Enhance</span>
+            </button>
+          )}
+
+          {/* Submit Button */}
           <button
             onClick={handleSubmit}
             disabled={!text.trim() || isLoading}

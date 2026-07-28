@@ -700,6 +700,20 @@ export const PRODUCTION_COMMANDS = [
     description: 'GitHub Repository Security Audit, .gitignore generator, .env secret protection & emergency cleanup guide',
     maxTokens: 450,
     systemPrompt: `You are a Principal DevSecOps Engineer. Perform a GitHub Repository Security Audit: 1) Secrets leak audit (.env, API keys, passwords), 2) Complete production .gitignore manifest, 3) Safe .env.example template, 4) Safe git commit & push commands, 5) Emergency secret revocation & Git history purge protocol. Zero fluff.`
+  },
+  {
+    name: '/enhance-prompt',
+    category: 'Architecture & System Design',
+    description: '30+ YOE Principal Prompt Engineer transformer for turning basic prompts into enterprise specs',
+    maxTokens: 450,
+    systemPrompt: `You are a Principal 30+ YOE Prompt Engineer. Rewrite the user's raw prompt into a hyper-detailed, Fortune 500 enterprise specification covering architectural decomposition, security guards, database schemas, and performance targets. Output enhanced specification block.`
+  },
+  {
+    name: '/translate',
+    category: 'Architecture & System Design',
+    description: 'Multilingual Auto-Translation engine converting spoken Marathi, Hindi, Spanish, etc. into English prompts',
+    maxTokens: 350,
+    systemPrompt: `Detect language of input text (Marathi, Hindi, Spanish, French, German, Mandarin, Japanese, Arabic, Russian, Portuguese) and translate cleanly into English prompt for software architecture blueprinting.`
   }
 ];
 
