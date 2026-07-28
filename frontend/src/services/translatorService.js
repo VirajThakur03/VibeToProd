@@ -1,36 +1,24 @@
 // Multilingual & Code-Mixed (Hinglish/Minglish) Auto-Translation & 30+ YOE Prompt Enhancer Service
 
-// Dictionary of multilingual patterns for auto-detection
-const MULTILINGUAL_PATTERNS = [
-  // Marathi
-  { regex: /मला\s+(.*?)\s+(वेबसाईट|वेबसाइट|अ‍ॅप|कोड|बनवायची|बनवायचं|पाहिजे)/i, lang: 'Marathi (मराठी)' },
-  { regex: /वेबसाईट\s+बनवा|बग\s+फिक्स/i, lang: 'Marathi (मराठी)' },
-
-  // Hindi
-  { regex: /मुझे\s+(.*?)\s+(वेबसाइट|ऐप|कोड|बनानी|बनाना|चाहिए)/i, lang: 'Hindi (हिंदी)' },
-  { regex: /वेबसाइट\s+बनाओ|कोड\s+सुधारो/i, lang: 'Hindi (हिंदी)' },
-
-  // Code-Mixed (Hinglish / Minglish)
-  { regex: /(?:banao|banaana|chahiye|pahije|banvaychi|banvaych|banaao|karo|banao)\s+/i, lang: 'Hinglish / Minglish (Mixed)' },
-
-  // Spanish
-  { regex: /quiero\s+crear\s+un(?:a)?\s+(sitio\s+web|página|aplicación|app)/i, lang: 'Spanish (Español)' },
-
-  // French
-  { regex: /je\s+veux\s+créer\s+un\s+(site\s+web|application)/i, lang: 'French (Français)' },
-
-  // German
-  { regex: /ich\s+möchte\s+eine\s+webseite/i, lang: 'German (Deutsch)' },
-
-  // Mandarin / Chinese
-  { regex: /我想建一个(.*)(网站|应用)/i, lang: 'Mandarin (中文)' },
-
-  // Japanese
-  { regex: /(.*)のWebサイトを作りたい/i, lang: 'Japanese (日本語)' }
+// Devanagari to English Dictionary Mapping
+const DEVANAGARI_TRANSLATIONS = [
+  { regex: /वेबसाईट|वेबसाइट|साइट/gi, val: 'website' },
+  { regex: /अ‍ॅप|ऐप|एप्लिकेशन/gi, val: 'app' },
+  { regex: /बनाई\s+जाए|बनवायची|बनवायचं|बनानी|बनाना|बनाओ|बनाएं|बनाये|बनाओ/gi, val: 'build' },
+  { regex: /मला|मुझे|हमे|हमारा|मेरे\s+लिए/gi, val: '' },
+  { regex: /पाहिजे|चाहिए|ज़रूरत|जरूरत/gi, val: '' },
+  { regex: /कॉफी\s*शॉप|कॉफी/gi, val: 'coffee shop' },
+  { regex: /रेस्टॉरंट|रेस्टोरेंट|हॉटेल|होटल/gi, val: 'restaurant' },
+  { regex: /दुकान|स्टोर/gi, val: 'store' },
+  { regex: /एरर|बग|खामी/gi, val: 'bug error' },
+  { regex: /पेमेंट|पैसे/gi, val: 'payment' },
+  { regex: /लॉगिन|साइनइन/gi, val: 'login' },
+  { regex: /एक/gi, val: 'a' }
 ];
 
 /**
  * Advanced Multilingual & Code-Mixed (Hindi + Marathi + English) Auto-Translator
+ * Guarantees 100% Pure English Output for the Translated Prompt Line
  */
 export function translateToEnglishPrompt(transcript) {
   if (!transcript || !transcript.trim()) {
@@ -41,7 +29,6 @@ export function translateToEnglishPrompt(transcript) {
   let detectedLang = 'English';
   let isCodeMixed = false;
 
-  // 1. Detect if input contains Devanagari (Hindi / Marathi) characters
   const hasDevanagari = /[\u0900-\u097F]/.test(clean);
   const hasEnglishWords = /[a-zA-Z]/.test(clean);
 
@@ -52,15 +39,9 @@ export function translateToEnglishPrompt(transcript) {
     const isMarathi = /[ळोपाहिजेबनवायचीमला]/i.test(clean);
     detectedLang = isMarathi ? 'Marathi (मराठी)' : 'Hindi (हिंदी)';
     isCodeMixed = true;
-  } else {
-    // Check regex pattern dictionary
-    for (const item of MULTILINGUAL_PATTERNS) {
-      if (item.regex.test(clean)) {
-        detectedLang = item.lang;
-        isCodeMixed = true;
-        break;
-      }
-    }
+  } else if (/(?:banao|banaana|chahiye|pahije|banvaychi|banvaych|banaao|karo|banao)\s+/i.test(clean)) {
+    detectedLang = 'Hinglish / Minglish (Code-Mixed)';
+    isCodeMixed = true;
   }
 
   if (!isCodeMixed) {
@@ -71,25 +52,34 @@ export function translateToEnglishPrompt(transcript) {
     };
   }
 
-  // 2. Translate Code-Mixed & Devanagari Tokens to Clean English Software Query
-  let translated = clean
-    // Remove Hindi/Marathi auxiliary verbs & filler phrases
-    .replace(/(?:मला|मुझे|चाहिए|बनवायची|बनानी|बनाना|बनवायचं|पाहिजे|बनाओ|करो|की|का|के|आहे|हो|एक|ek|banao|banaana|chahiye|pahije|banvaychi)/gi, ' ')
-    // Translate domain terms
-    .replace(/वेबसाईट|वेबसाइट/gi, 'website')
-    .replace(/अ‍ॅप|ऐप/gi, 'app')
-    .replace(/कोड/gi, 'code')
-    .replace(/दुकान/gi, 'store')
-    .replace(/कॉफी/gi, 'coffee shop')
-    .replace(/हॉटेल|रेस्टॉरंट/gi, 'restaurant')
-    .replace(/एरर|बग/gi, 'bug error')
-    .replace(/\s+/g, ' ')
-    .trim();
-
-  // Prefix with standard command intent if not present
-  if (!translated.toLowerCase().startsWith('/') && !translated.toLowerCase().startsWith('build') && !translated.toLowerCase().startsWith('create') && !translated.toLowerCase().startsWith('fix')) {
-    translated = `build a ${translated} website`;
+  // 1. Apply Devanagari translation mappings
+  let translated = clean;
+  for (const rule of DEVANAGARI_TRANSLATIONS) {
+    translated = translated.replace(rule.regex, rule.val);
   }
+
+  // 2. Remove Hinglish / Minglish filler words
+  translated = translated.replace(/(?:banao|banaana|chahiye|pahije|banvaychi|banvaych|banaao|karo|banao|hai|hu|hoon|chahiye|ek|mera|meri|ahe)\s+/gi, ' ');
+
+  // 3. CRITICAL: STRIP ALL REMAINING DEVANAGARI CHARACTERS TO GUARANTEE 100% PURE ENGLISH OUTPUT
+  translated = translated.replace(/[\u0900-\u097F]/g, ' ');
+
+  // 4. Clean up spaces and formatting
+  translated = translated.replace(/\s+/g, ' ').trim();
+
+  // If empty after stripping, provide fallback
+  if (!translated) {
+    translated = 'build a professional website';
+  }
+
+  // Ensure prompt starts with action verb if not starting with slash or verb
+  const lower = translated.toLowerCase();
+  if (!lower.startsWith('/') && !lower.startsWith('build') && !lower.startsWith('create') && !lower.startsWith('fix') && !lower.startsWith('generate')) {
+    translated = `build a ${translated}`;
+  }
+
+  // Deduplicate redundant consecutive words like "build build" or "website website"
+  translated = translated.replace(/\b(\w+)\s+\1\b/gi, '$1');
 
   return {
     detectedLang: detectedLang,

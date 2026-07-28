@@ -18,6 +18,8 @@ export default function CommandInput({ availableCommands, onSubmit, isLoading })
 
   const inputRef = useRef(null);
   const recognitionRef = useRef(null);
+  const shouldKeepListeningRef = useRef(false);
+  const accumulatedTranscriptRef = useRef('');
 
   // Global Ctrl+K / Cmd+K focus shortcut listener
   useEffect(() => {
@@ -33,7 +35,7 @@ export default function CommandInput({ availableCommands, onSubmit, isLoading })
     return () => window.removeEventListener('keydown', handleGlobalFocus);
   }, []);
 
-  // Initialize Speech Recognition API
+  // Initialize Speech Recognition API with Persistent Accumulation
   useEffect(() => {
     const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
     if (SpeechRecognition) {
@@ -43,26 +45,43 @@ export default function CommandInput({ availableCommands, onSubmit, isLoading })
       rec.lang = 'hi-IN'; // Multi-accent default, auto-detects Marathi, Hindi, English
 
       rec.onresult = (event) => {
-        let transcriptStr = '';
+        let interim = '';
         for (let i = event.resultIndex; i < event.results.length; ++i) {
-          transcriptStr += event.results[i][0].transcript;
+          const result = event.results[i];
+          if (result.isFinal) {
+            accumulatedTranscriptRef.current += ' ' + result[0].transcript;
+          } else {
+            interim += result[0].transcript;
+          }
         }
 
-        if (transcriptStr.trim()) {
-          setNativeTranscript(transcriptStr);
-          const translation = translateToEnglishPrompt(transcriptStr);
+        const fullNativeText = (accumulatedTranscriptRef.current + ' ' + interim).replace(/\s+/g, ' ').trim();
+        if (fullNativeText) {
+          setNativeTranscript(fullNativeText);
+          const translation = translateToEnglishPrompt(fullNativeText);
           setDetectedLanguage(translation.detectedLang);
-          setText(translation.translatedText || transcriptStr);
+          setText(translation.translatedText || fullNativeText);
         }
       };
 
       rec.onerror = (e) => {
         console.error("Speech Recognition Error:", e);
-        setIsListening(false);
+        if (e.error !== 'no-speech') {
+          shouldKeepListeningRef.current = false;
+          setIsListening(false);
+        }
       };
 
       rec.onend = () => {
-        setIsListening(false);
+        if (shouldKeepListeningRef.current) {
+          try {
+            rec.start();
+          } catch (err) {
+            setIsListening(false);
+          }
+        } else {
+          setIsListening(false);
+        }
       };
 
       recognitionRef.current = rec;
@@ -76,9 +95,12 @@ export default function CommandInput({ availableCommands, onSubmit, isLoading })
     }
 
     if (isListening) {
+      shouldKeepListeningRef.current = false;
       recognitionRef.current.stop();
       setIsListening(false);
     } else {
+      accumulatedTranscriptRef.current = '';
+      shouldKeepListeningRef.current = true;
       setNativeTranscript('');
       setDetectedLanguage('');
       setIsEnhanced(false);
@@ -87,6 +109,7 @@ export default function CommandInput({ availableCommands, onSubmit, isLoading })
         setIsListening(true);
       } catch (err) {
         console.error("Failed to start speech recognition", err);
+        shouldKeepListeningRef.current = false;
       }
     }
   };
