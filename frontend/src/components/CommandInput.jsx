@@ -292,7 +292,7 @@ export default function CommandInput({ availableCommands, onSubmit, isLoading })
             {isListening ? <MicOff className="w-4 h-4 text-white" /> : <Mic className="w-4 h-4 text-emerald-400" />}
           </button>
 
-          {/* 30+ YOE Expert Prompt Enhancer Button */}
+          {/* Enhance Prompt Button */}
           {text.trim() && (
             <button
               type="button"
@@ -302,10 +302,10 @@ export default function CommandInput({ availableCommands, onSubmit, isLoading })
                   ? 'bg-purple-600/20 text-purple-300 border border-purple-500/40'
                   : 'bg-purple-600/10 hover:bg-purple-600/20 text-purple-300 border border-purple-500/30'
               }`}
-              title="Enhance raw prompt into 30+ YOE Senior Principal Architect specification"
+              title="Enhance raw prompt into Senior Principal Architect specification"
             >
               <Wand2 className="w-3.5 h-3.5 text-purple-400" />
-              <span className="hidden md:inline">🪄 30+ YOE Enhance</span>
+              <span className="hidden md:inline">🪄 Enhance Prompt</span>
             </button>
           )}
 

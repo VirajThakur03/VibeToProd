@@ -1,8 +1,9 @@
 import React, { useState } from 'react';
 import { marked } from 'marked';
-import { Copy, Check, Zap, FileCode, Download, Code, ShieldCheck, FileDown, Play, TestTube, CheckCircle2 } from 'lucide-react';
+import { Copy, Check, Zap, FileCode, Download, Code, ShieldCheck, FileDown, Play, TestTube, CheckCircle2, Lightbulb, ArrowRight, Terminal } from 'lucide-react';
 import { calculateFinancialSavings } from '../services/tokenCalculator';
 import { getAvailableBlueprints } from '../services/blueprints';
+import { getContextualRecommendations } from '../services/recommendationEngine';
 import LiveSandboxModal from './LiveSandboxModal';
 
 export default function ResponseCard({ item, onRunCommand }) {
@@ -17,6 +18,9 @@ export default function ResponseCard({ item, onRunCommand }) {
 
   const tokensSaved = tokens?.tokens_saved ?? 0;
   const financial = calculateFinancialSavings(tokensSaved, provider);
+
+  // Contextual Recommendations
+  const recommendations = getContextualRecommendations(command_used, user_query);
 
   // Detect code blocks for live sandbox option
   const hasCodeBlock = ai_response && (ai_response.includes('```') || ai_response.includes('<div') || ai_response.includes('<button') || ai_response.includes('export default'));
@@ -42,18 +46,18 @@ export default function ResponseCard({ item, onRunCommand }) {
     URL.revokeObjectURL(url);
   };
 
-  const handleDownloadBlueprintMd = () => {
+  const handleDownloadSpecificMd = (cmdKey, customFilename) => {
     const all = getAvailableBlueprints();
-    const cmdKey = (command_used || '/plan').toLowerCase();
-    const bp = all[cmdKey] || all['/plan'];
-    const cmdName = cmdKey.replace('/', '');
-    const content = bp.systemPrompt || `# System Blueprint: ${command_used}\n\n${bp.description}`;
+    const key = (cmdKey || '/plan').toLowerCase();
+    const bp = all[key] || all['/plan'];
+    const cmdName = customFilename || `${key.replace('/', '')}.md`;
+    const content = bp.systemPrompt || `# System Blueprint: ${cmdKey}\n\n${bp.description}`;
 
     const blob = new Blob([content], { type: 'text/markdown;charset=utf-8' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = `${cmdName}.md`;
+    a.download = cmdName;
     a.click();
     URL.revokeObjectURL(url);
   };
@@ -95,7 +99,7 @@ export default function ResponseCard({ item, onRunCommand }) {
 
           {/* Download Blueprint .md */}
           <button
-            onClick={handleDownloadBlueprintMd}
+            onClick={() => handleDownloadSpecificMd(command_used)}
             className="px-2 py-1 rounded bg-blue-600/15 hover:bg-blue-600/30 text-blue-300 border border-blue-500/30 transition-all text-[11px] font-mono flex items-center space-x-1"
             title="Download Standalone .md System Blueprint for IDE"
           >
@@ -180,6 +184,51 @@ export default function ResponseCard({ item, onRunCommand }) {
           </div>
         </div>
       )}
+
+      {/* DYNAMIC CONTEXTUAL RECOMMENDATIONS: Next Commands & .md Downloads */}
+      <div className="mt-3 pt-3 border-t border-dev-border/50 bg-dev-bg/70 p-3 rounded-lg border border-blue-500/20 font-mono text-xs">
+        <div className="flex items-center space-x-2 mb-2">
+          <Lightbulb className="w-4 h-4 text-amber-400 animate-pulse" />
+          <span className="font-bold text-white text-xs">Recommended Next Steps & IDE `.md` Blueprints:</span>
+        </div>
+
+        {/* Next Commands Suggestions */}
+        <div className="mb-2.5">
+          <span className="text-[10px] text-dev-muted block mb-1.5 uppercase tracking-wider">Suggested Next Slash Commands (1-Click Run):</span>
+          <div className="flex flex-wrap gap-2">
+            {recommendations.commands.map((cmd) => (
+              <button
+                key={cmd.name}
+                onClick={() => onRunCommand && onRunCommand(`${cmd.name} for ${user_query}`)}
+                className="px-2.5 py-1 rounded bg-blue-600/15 hover:bg-blue-600/30 text-blue-300 border border-blue-500/30 flex items-center space-x-1.5 transition-all text-[11px] group"
+                title={cmd.desc}
+              >
+                <Terminal className="w-3 h-3 text-blue-400" />
+                <span className="font-bold">{cmd.name}</span>
+                <ArrowRight className="w-3 h-3 opacity-60 group-hover:translate-x-0.5 transition-transform" />
+              </button>
+            ))}
+          </div>
+        </div>
+
+        {/* Downloadable .md Blueprint Files Suggestions */}
+        <div>
+          <span className="text-[10px] text-dev-muted block mb-1.5 uppercase tracking-wider">Recommended `.md` Blueprint Files (Download for Antigravity/VS Code/Cursor):</span>
+          <div className="flex flex-wrap gap-2">
+            {recommendations.mdFiles.map((file) => (
+              <button
+                key={file.name}
+                onClick={() => handleDownloadSpecificMd(file.cmd, file.name)}
+                className="px-2.5 py-1 rounded bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 flex items-center space-x-1.5 transition-all text-[11px]"
+                title={`Download ${file.name} for local IDE setup`}
+              >
+                <FileDown className="w-3 h-3 text-emerald-400" />
+                <span>Download <strong className="text-white">{file.name}</strong></span>
+              </button>
+            ))}
+          </div>
+        </div>
+      </div>
 
       {/* Telemetry Footer */}
       <div className="mt-3 pt-2.5 border-t border-dev-border/60 flex flex-wrap items-center justify-between text-[11px] font-mono text-dev-muted gap-2">

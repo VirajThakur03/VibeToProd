@@ -1,6 +1,5 @@
-// Client-Side Blueprint Engine with Deep 7-Step Architecture & Design Specifications
-
 import { PRODUCTION_COMMANDS } from './commandRepository';
+import { detectBestSlashCommand } from './intentClassifier';
 
 export const PROFESSIONAL_MD_CONTENT = `# Professional Senior Industry-Grade Refactoring Blueprint (/professional)
 
@@ -183,12 +182,17 @@ export function saveCustomBlueprint(commandName, description, systemPrompt, maxT
 export function wrapPromptClient(rawInput) {
   const trimmed = (rawInput || '').trim();
   const match = trimmed.match(/^(\/[\w\-]+)\s*(.*)/s);
-  let cmd = '/plan';
+  let cmd = '';
   let query = trimmed;
 
   if (match) {
     cmd = match[1].toLowerCase();
     query = match[2].trim() || trimmed;
+  } else {
+    // Intelligent Intent Auto-Routing: Auto-detect the best slash command for raw prompt
+    const detected = detectBestSlashCommand(trimmed);
+    cmd = detected.cmd;
+    query = trimmed;
   }
 
   const allBlueprints = getAvailableBlueprints();
